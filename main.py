@@ -1,23 +1,37 @@
-import os, re, xlrd, xlwt, pkuseg, numpy
+import os, re, xlrd, xlwt, pkuseg, numpy, jieba
+
+# 字频
+# 加载字频数据库
+zp = xlrd.open_workbook('./corpus/CorpusCharacterlist.xls')
+zp.sheet_names()
+table = zp.sheet_by_name('zifreq')
+charlist = table.col_values(1)
+charrate = table.col_values(3)
+zpDict = dict(zip(charlist, charrate))
+print('字频数据库加载完成')
+
+#词频
+# 加载词频数据库
+cp = xlrd.open_workbook('./corpus/CorpusWordPOSlist.xls')
+cp.sheet_names()
+table = cp.sheet_by_name('wordposfreq_50')
+worldlist = table.col_values(1)
+worldrate = table.col_values(5)
+worldcate = table.col_values(3)
+cpDict = dict(zip(worldlist, worldrate))
+cxDict = dict(zip(worldlist, worldcate))
+print('词频数据库加载完成')
 
 filePath = './files/'
 readmList = os.listdir(filePath)
-
+print(readmList)
 for fileName in readmList:
+    print('开始分析'+fileName)
     # 打开阅读材料
-    readm = open('./files/'+fileName, 'r', encoding='UTF-8')
+    readm = open(filePath+fileName, 'r', encoding='UTF-8')
     # 读取内容
     readmData = readm.read()
 
-    # 字频
-    # 加载字频数据库
-    zp = xlrd.open_workbook('CorpusCharacterlist.xls')
-    zp.sheet_names()
-    table = zp.sheet_by_name('zifreq')
-    worldlist = table.col_values(1)
-    worldrate = table.col_values(3)
-    zpDict = dict(zip(worldlist, worldrate))
-    print('字频数据库加载完成')
     # 文件字频统计
     charDict = {}
     for n, char in enumerate(readmData):
@@ -28,7 +42,9 @@ for fileName in readmList:
                 charDict[char] = 1
         else:
             pass
-    charNum = n
+    charNum1 = n
+    charNum2 = len(charDict)
+    
     # 字频统计结果
     charResult = []
     for char in charDict.keys():
@@ -42,41 +58,34 @@ for fileName in readmList:
     for i in range(len(charResult)):
         totalZP = totalZP + charResult[i][3]
     meanZP = totalZP/(i+1) # 平均字频
-
-
-    #词频
-    # 加载词频数据库
-    cp = xlrd.open_workbook('CorpusWordPOSlist.xls')
-    cp.sheet_names()
-    table = cp.sheet_by_name('wordposfreq_50')
-    worldlist = table.col_values(1)
-    worldrate = table.col_values(5)
-    cpDict = dict(zip(worldlist, worldrate))
-    print('词频数据库加载完成')
-    # 文件词频统计
-    wordDict = {}
+    # 文件词频统计1
+    wordDict1 = {}
     seg = pkuseg.pkuseg()
-    biaodian = '，。、《》？、！：；“”%…（）' # 排除常用标点
+    biaodian = '，。、《》？、！：；“”%……（）' # 排除常用标点
     for n, word in enumerate(seg.cut(readmData)):
         if word in biaodian:
             pass
         else:
-            pass
-            if word in wordDict:
-                wordDict[word] += 1
+            if word in wordDict1:
+                wordDict1[word] += 1
             else:
-                wordDict[word] = 1
+                wordDict1[word] = 1
     wordNum1 = n
-    wordNum2 = len(wordDict)
+    wordNum2 = len(wordDict1)
     # Num1是有重复计算数字 Num2是无重复计算
     # 词频统计结果
     wordResult = []
-    for word in wordDict.keys():
+    for word in wordDict1.keys():
+        if word in cxDict.keys():
+            cx = cxDict[word]
+        else:
+            cx = None
         if word in cpDict.keys():
             cp = cpDict[word]
         else:
-            cp = 0
-        wordResult.append([word, wordDict[word], cp])
+            # cp = 0
+            continue
+        wordResult.append([word, wordDict1[word], cp, cx])
     totalCP = 0
     for i in range(len(wordResult)):
         totalCP = totalCP + wordResult[i][2]
@@ -122,7 +131,7 @@ for fileName in readmList:
 
     # 写入词频统计结果
     sheet2 = excelResult.add_sheet(u'词频', cell_overwrite_ok=True)
-    wordTitle = ['词', '次数', '词频']
+    wordTitle = ['词', '次数', '词频', '词性']
     for col in range(len(wordTitle)):
         sheet2.write(0,col,wordTitle[col])
     for row, item in enumerate(wordResult):
@@ -149,8 +158,8 @@ for fileName in readmList:
     print("分句-2统计完成")
 
     sheet5 = excelResult.add_sheet(u'统计', cell_overwrite_ok=True)
-    sataTitle = ['总字数', '平均字频', '总词数（有重复）', '总词数（无重复）', '平均词频', '平均句长-1', '平均句长-2', '最长句长']
-    sataContain = [charNum, meanZP, wordNum1, wordNum2, meanCP, meanSntLen1, meanSntLen2, max(sntlen2)]
+    sataTitle = ['总字数', '用字数', '平均字频', '总词数（有重复）', '总词数（无重复）', '平均词频', '平均句长-1', '平均句长-2', '最长句长']
+    sataContain = [charNum1, charNum2, meanZP, wordNum1, wordNum2, meanCP, meanSntLen1, meanSntLen2, max(sntlen2)]
     for row in range(len(sataTitle)):
         sheet5.write(row,0,sataTitle[row])
         sheet5.write(row,1,sataContain[row])
