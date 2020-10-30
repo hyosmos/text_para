@@ -58,7 +58,8 @@ for fileName in readmList:
     for i in range(len(charResult)):
         totalZP = totalZP + charResult[i][3]
     meanZP = totalZP/(i+1) # 平均字频
-    # 文件词频统计1
+
+    # 文件词频统计
     wordDict1 = {}
     seg = pkuseg.pkuseg()
     biaodian = '，。、《》？、！：；“”%……（）' # 排除常用标点
