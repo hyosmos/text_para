@@ -74,7 +74,8 @@ for fileName in readmList:
     wordNum2 = len(wordDict1)
     # Num1是有重复计算数字 Num2是无重复计算
     # 词频统计结果
-    wordResult = []
+    wordResult1 = []
+    wordResult2 = []
     for word in wordDict1.keys():
         if word in cxDict.keys():
             cx = cxDict[word]
@@ -83,12 +84,13 @@ for fileName in readmList:
         if word in cpDict.keys():
             cp = cpDict[word]
         else:
-            # cp = 0
+            cp = 0
+            wordResult2.append([word, wordDict1[word], cp, cx])
             continue
-        wordResult.append([word, wordDict1[word], cp, cx])
+        wordResult1.append([word, wordDict1[word], cp, cx])
     totalCP = 0
-    for i in range(len(wordResult)):
-        totalCP = totalCP + wordResult[i][2]
+    for i in range(len(wordResult1)):
+        totalCP = totalCP + wordResult1[i][2]
     meanCP = totalCP/(i+1) # 平均词频
 
     # 切分句子统计句长
@@ -134,10 +136,19 @@ for fileName in readmList:
     wordTitle = ['词', '次数', '词频', '词性']
     for col in range(len(wordTitle)):
         sheet2.write(0,col,wordTitle[col])
-    for row, item in enumerate(wordResult):
+    for row, item in enumerate(wordResult1):
         for col in range(len(item)):
             sheet2.write(row+1,col,item[col])
     print("词频统计完成")
+
+    sheet2_1 = excelResult.add_sheet(u'排除词', cell_overwrite_ok=True)
+    wordTitle = ['词', '次数', '词频', '词性']
+    for col in range(len(wordTitle)):
+        sheet2_1.write(0,col,wordTitle[col])
+    for row, item in enumerate(wordResult2):
+        for col in range(len(item)):
+            sheet2_1.write(row+1,col,item[col])
+    print("词频2统计完成")
 
     sheet3 = excelResult.add_sheet(u'分句-1', cell_overwrite_ok=True)
     sntTitle = ['句子', '句长']
